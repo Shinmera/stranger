@@ -41,9 +41,13 @@ class Commands(commands.Cog):
         if self.check_access(ctx) is None: return
 
         server = self.server(ctx)
+        i = 0
         with open(f, 'r') as f:
             for row in csv.reader(f):
+                if i%10 == 0:
+                    await ctx.send("Processed {0} rows".format(i))
                 await server.user(row[0]).add_roles(row[1:], ctx.guild)
+                i++
         self.bot.save()
         await ctx.reply("Ok, user roles imported.")
         
