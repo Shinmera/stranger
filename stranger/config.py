@@ -101,6 +101,11 @@ class Server():
             self.messages[(message.channel, message.id)] = message
         return self.messages.get(name)
 
+    def delete_message(self, message):
+        del self.messages[message.name]
+        del self.messages[(message.channel, message.id)]
+        return self
+
     def from_config(config):
         users = {}
         for user in config.get("users", []):

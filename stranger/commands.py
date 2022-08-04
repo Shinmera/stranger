@@ -44,6 +44,18 @@ class Commands(commands.Cog):
             message = await channel.send(content)
             message = self.server(ctx).message(name, message.channel.id, message.id)
             await ctx.reply("Ok, message created. You can refer to it with its name: {0}".format(message.name))
+
+    @commands.command(name='delete-emoji-message')
+    async def delete_emoji_message(self, ctx, name):
+        if self.check_access(ctx) is None: return
+        
+        message = self.server(ctx).message(message_name)
+        if message is None:
+            await ctx.reply("No emoji message named {0} found.".format(message_name))
+        else:
+            await ctx.guild.get_channel(message.channel).get_partial_message(message.id).delete()
+            self.server(ctx).delete_message(message)
+            await ctx.repl("Ok, message deleted.")
     
     @commands.command(name='add-reaction-role')
     async def add_reaction_role(self, ctx, message_name, emoji_name, role):
