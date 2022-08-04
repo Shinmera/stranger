@@ -11,17 +11,17 @@ class User():
         self.roles = roles
         self.status = status
 
-    def join(self, guild):
+    async def join(self, guild):
         member = guild.get_member_named(self.name)
         if member is not None:
             for role_name in self.roles:
                 role = discord.utils.get(guild.roles, name=role_name)
                 if role is not None:
-                    member.add_roles(role)
+                    await member.add_roles(role)
         return self
 
     def from_config(config):
-        return User(config.name, config.get("roles", []), config.get("status", "regular"))
+        return User(config["name"], config.get("roles", []), config.get("status", "regular"))
 
     def to_config(self):
         return {
@@ -39,27 +39,27 @@ class Message():
         self.name = name
         self.role_map = role_map
 
-    def react(self, member, emoji, add=True):
+    async def react(self, member, emoji, add=True):
         role_name = self.role_map.get(emoji.name)
         if role_name is not None:
             role = discord.utils.get(member.guild.roles, name=role_name)
             if role is not None:
                 if add:
-                    member.add_roles(role)
+                    await member.add_roles(role)
                 else:
-                    member.remove_roles(role)
+                    await member.remove_roles(role)
         return self
 
-    def add_map(self, emoji, role):
+    async def add_map(self, emoji, role):
         self.role_map[emoji.name] = role
-        emoji.guild.get_channel(self.channel).get_partial_message(self.id).add_reaction(emoji)
+        await emoji.guild.get_channel(self.channel).get_partial_message(self.id).add_reaction(emoji)
 
-    def remove_map(self, emoji):
+    async def remove_map(self, emoji):
         del self.role_map[emoji.name]
-        emoji.guild.get_channel(self.channel).get_partial_message(self.id).clear_reaction(emoji)
+        await emoji.guild.get_channel(self.channel).get_partial_message(self.id).clear_reaction(emoji)
 
     def from_config(config):
-        return Message(config.channel, config.id, config.name, config.get("role_map", {}))
+        return Message(config["channel"], config["id"], config["name"], config.get("role_map", {}))
 
     def to_config(self):
         return {
@@ -77,16 +77,16 @@ class Server():
         self.users = users
         self.messages = messages
 
-    def react(self, payload, add=True):
+    async def react(self, member, payload, add=True):
         message = self.messages.get((payload.channel_id, payload.message_id))
         if message is not None:
-            message.react(payload.member, payload.emoji)
+            await message.react(member, payload.emoji, add)
         return self
 
-    def join(self, member):
-        user = self.users.get(member.discriminator)
+    async def join(self, member):
+        user = self.users.get(str(member))
         if user is not None:
-            user.join(member.guild)
+            await user.join(member.guild)
         return self
 
     def user(self, name):
@@ -108,16 +108,16 @@ class Server():
             users[user.name] = user
         messages = {}
         for message in config.get("messages", []):
-            message = User.from_config(message)
+            message = Message.from_config(message)
             messages[message.name] = message
-            messages[(massage.channel, message.id)] = message
-        return Server(config.id, users, messages)
+            messages[(message.channel, message.id)] = message
+        return Server(config["id"], users, messages)
 
     def to_config(self):
         return {
             "id": self.id,
             "users": [ x.to_config() for x in self.users.values() ],
-            "messages": [ x.to_config() for x in self.messages.values() ]
+            "messages": [ x.to_config() for (k, x) in self.messages.items() if type(k) == str ]
         }
 
 def generate_password(length=16):
@@ -130,7 +130,7 @@ class Configuration():
         self.servers = servers
         self.register_password = register_password
 
-    def server(id):
+    def server(self, id):
         if self.servers.get(id) is None:
             self.servers[id] = Server(id)
         return self.servers[id]

@@ -1,3 +1,5 @@
+import sys
+import json
 from .client import Client
 
 def main(token=None, config=None):
@@ -5,4 +7,7 @@ def main(token=None, config=None):
     client.run(token)
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    init = {}
+    with open('info.txt', 'r') as f:
+        init = json.load(f)
+    main(init["token"], init.get("config"))
