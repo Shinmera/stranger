@@ -8,7 +8,7 @@ class User():
     
     def __init__(self, name, roles=[], status="regular"):
         self.name = name
-        self.roles = roles
+        self.roles = set(roles)
         self.status = status
 
     async def join(self, guild):
@@ -20,13 +20,20 @@ class User():
                     await member.add_roles(role)
         return self
 
+    async def add_roles(self, roles, guild=None):
+        new = self.roles.union(roles)
+        if new != self.roles:
+            self.roles = new
+            if guild:
+                await self.join(guild)
+
     def from_config(config):
         return User(config["name"], config.get("roles", []), config.get("status", "regular"))
 
     def to_config(self):
         return {
             "name": self.name,
-            "roles": self.roles,
+            "roles": list(self.roles),
             "status": self.status
         }
 

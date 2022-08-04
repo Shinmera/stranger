@@ -1,4 +1,5 @@
 import discord
+import csv
 from discord.ext import commands
 
 class Commands(commands.Cog):
@@ -21,8 +22,9 @@ class Commands(commands.Cog):
         if password != self.config.register_password: return
     
         user.status = "admin"
+        self.bot.save()
         await ctx.message.delete()
-        await ctx.send("Ok, registration successful. Please save your configuration now.")
+        await ctx.send("Ok, registration successful.")
     
     @commands.command(name='add-user-role')
     async def add_user_role(self, ctx, user, role):
@@ -30,8 +32,21 @@ class Commands(commands.Cog):
         
         user = self.server(ctx).user(user)
         user.roles.append(role)
+        self.bot.save()
         await user.join(ctx.guild)
         await ctx.reply("Ok, {0} has been assigned to the {1} role.".format(user, role))
+
+    @commands.command(name='import-user-roles')
+    async def import_user_roles(self, ctx, f):
+        if self.check_access(ctx) is None: return
+
+        server = self.server(ctx)
+        with open(f, 'r') as f:
+            for row in csv.reader(f):
+                await server.user(row[0]).add_roles(row[1:], ctx.guild)
+        self.bot.save()
+        await ctx.reply("Ok, user roles imported.")
+        
     
     @commands.command(name='make-emoji-message')
     async def make_emoji_message(self, ctx, channel, name, content):
@@ -43,10 +58,11 @@ class Commands(commands.Cog):
         else:
             message = await channel.send(content)
             message = self.server(ctx).message(name, message.channel.id, message.id)
+            self.bot.save()
             await ctx.reply("Ok, message created. You can refer to it with its name: {0}".format(message.name))
 
     @commands.command(name='delete-emoji-message')
-    async def delete_emoji_message(self, ctx, name):
+    async def delete_emoji_message(self, ctx, message_name):
         if self.check_access(ctx) is None: return
         
         message = self.server(ctx).message(message_name)
@@ -55,6 +71,7 @@ class Commands(commands.Cog):
         else:
             await ctx.guild.get_channel(message.channel).get_partial_message(message.id).delete()
             self.server(ctx).delete_message(message)
+            self.bot.save()
             await ctx.repl("Ok, message deleted.")
     
     @commands.command(name='add-reaction-role')
@@ -69,6 +86,7 @@ class Commands(commands.Cog):
             await ctx.reply("No emoji with name {0} found.".format(emoji_name))
         else:
             await message.add_map(emoji, role)
+            self.bot.save()
             await ctx.reply("Ok, emoji role added!")
     
     @commands.command(name='remove-reaction-role')
@@ -83,11 +101,12 @@ class Commands(commands.Cog):
             await ctx.reply("No emoji with name {0} found.".format(emoji_name))
         else:
             await message.remove_map(emoji)
-            await ctx.reply("Ok, emoji role added!")
+            self.bot.save()
+            await ctx.reply("Ok, emoji role removed!")
     
     @commands.command(name='save-config')
     async def save_config(self, ctx):
         if self.check_access(ctx) is None: return
     
-        self.config.save(self.bot.config_file)
+        self.bot.save()
         await ctx.reply("Ok, config saved.")

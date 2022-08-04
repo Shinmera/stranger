@@ -39,3 +39,6 @@ class Client(discord.ext.commands.Bot):
 
     async def on_member_join(self, member):
         self.config.server(payload.guild_id).join(member)
+
+    def save(self):
+        self.config.save(self.config_file)
