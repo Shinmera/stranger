@@ -92,6 +92,8 @@ class Server():
 
     async def join(self, member):
         user = self.users.get(str(member))
+        if user is None:
+            user = self.users.get(str(member.name))
         if user is not None:
             await user.join(member.guild)
         return self
