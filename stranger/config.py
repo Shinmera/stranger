@@ -11,12 +11,14 @@ class User():
         self.roles = set(roles)
         self.status = status
 
-    async def join(self, guild):
-        member = guild.get_member_named(self.name)
+    async def join(self, guild, member=None):
+        if member is None:
+            member = guild.get_member_named(self.name)
         if member is not None:
             for role_name in self.roles:
                 role = discord.utils.get(guild.roles, name=role_name)
                 if role is not None:
+                    print("Awarding {0.name} role {1}".format(self, role_name))
                     await member.add_roles(role)
         return self
 
@@ -81,7 +83,7 @@ class Server():
 
     def __init__(self, id, users={}, messages={}):
         self.id = id
-        self.users = users
+        self.users = CaseInsensitiveDict(users)
         self.messages = messages
 
     async def react(self, member, payload, add=True):
@@ -95,7 +97,7 @@ class Server():
         if user is None:
             user = self.users.get(str(member.name))
         if user is not None:
-            await user.join(member.guild)
+            await user.join(member.guild, member)
         return self
 
     def user(self, name):
