@@ -2,6 +2,8 @@ import discord
 import json
 import random
 import string
+from .caseinsensitivedict import CaseInsensitiveDict
+from datetime import datetime
 
 class User():
     __slots__ = 'name', 'roles', 'status'
@@ -140,11 +142,14 @@ def generate_password(length=16):
     return ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=length))
 
 class Configuration():
-    __slots__ = 'servers', 'register_password'
+    __slots__ = 'servers', 'register_password', 'last_check'
 
-    def __init__(self, servers={}, register_password=generate_password()):
+    # You may wonder: why 1420066800 ?
+    # Well, it turns out discordpy only likes timestamps after 2015.
+    def __init__(self, servers={}, register_password=generate_password(), last_check=1420066800):
         self.servers = servers
         self.register_password = register_password
+        self.last_check = datetime.fromtimestamp(last_check)
 
     def server(self, id):
         if self.servers.get(id) is None:
@@ -156,11 +161,12 @@ class Configuration():
         for server in config.get("servers", []):
             server = Server.from_config(server)
             servers[server.id] = server
-        return Configuration(servers, config.get("register_password", generate_password()))
+        return Configuration(servers, config.get("register_password", generate_password()), config.get("last_check", 1420066800))
     
     def to_config(self):
         return {
             "register_password": self.register_password,
+            "last_check": self.last_check.timestamp(),
             "servers": [ x.to_config() for x in self.servers.values() ]
         }
 

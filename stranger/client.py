@@ -1,6 +1,7 @@
 import discord
 from .config import Configuration
 from .commands import Commands
+from datetime import datetime
 
 class Client(discord.ext.commands.Bot):
     def __init__(self, config=None):
@@ -24,8 +25,9 @@ class Client(discord.ext.commands.Bot):
             server = self.config.server(guild.id)
             if server is not None:
                 print('Processing {0.name}'.format(guild))
-                async for member in guild.fetch_members(limit=None):
+                async for member in guild.fetch_members(limit=None, after=self.config.last_check):
                     await server.join(member)
+        self.config.last_check = datetime.now()
         print('All done.')
 
     async def on_raw_reaction_add(self, payload: discord.RawReactionActionEvent):
