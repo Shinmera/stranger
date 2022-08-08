@@ -47,7 +47,7 @@ class Commands(commands.Cog):
                 if i%10 == 0:
                     await ctx.send("Processed {0} rows".format(i))
                 await server.user(row[0]).add_roles(row[1:], ctx.guild)
-                i++
+                i += 1
         self.bot.save()
         await ctx.reply("Ok, user roles imported.")
         
