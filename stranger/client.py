@@ -20,9 +20,10 @@ class Client(discord.ext.commands.Bot):
     async def on_ready(self):
         print('We have logged in as {0.user}, processing guilds...'.format(self))
         async for guild in self.fetch_guilds(limit=None):
-            print('Processing {0.name}'.format(guild))
+            guild = self.get_guild(guild.id)
             server = self.config.server(guild.id)
             if server is not None:
+                print('Processing {0.name}'.format(guild))
                 async for member in guild.fetch_members(limit=None):
                     await server.join(member)
         print('All done.')
@@ -38,7 +39,7 @@ class Client(discord.ext.commands.Bot):
             await self.config.server(payload.guild_id).react(member, payload, False)
 
     async def on_member_join(self, member):
-        self.config.server(payload.guild_id).join(member)
+        self.config.server(member.guild.id).join(member)
 
     def save(self):
         self.config.save(self.config_file)
