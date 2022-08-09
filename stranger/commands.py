@@ -44,13 +44,25 @@ class Commands(commands.Cog):
         i = 0
         with open(f, 'r') as f:
             for row in csv.reader(f):
-                if i%10 == 0:
+                if i%25 == 0:
                     await ctx.send("Processed {0} rows".format(i))
                 await server.user(row[0]).add_roles(row[1:], ctx.guild)
                 i += 1
         self.bot.save()
         await ctx.reply("Ok, user roles imported.")
+
+    @commands.command(name='reprocess-members')
+    async def reprocess_members(self, ctx):
+        if self.check_access(ctx) is None: return
         
+        server = self.server(ctx)
+        i = 0
+        async for member in ctx.guild.fetch_members(limit=None):
+            if i%25 == 0:
+                await ctx.send("Processed {0} members".format(i))
+            await server.join(member)
+            i += 1
+        await ctx.reply("Ok, members reprocessed.")
     
     @commands.command(name='make-emoji-message')
     async def make_emoji_message(self, ctx, channel, name, content):
